@@ -93,7 +93,6 @@ class Heap<E extends Comparable<E>> {
     }
 
     /** Add a new object into the heap */
-    @SuppressWarnings("unchecked")
     public void add(E newObject) {
         list.add(newObject); // Append to the heap
         int currentIndex = list.size() - 1; // The index of the last node
@@ -115,7 +114,6 @@ class Heap<E extends Comparable<E>> {
     }
 
     /** Remove the root from the heap */
-    @SuppressWarnings("unchecked")
     public E remove() {
         if (list.size() == 0) return null;
 
