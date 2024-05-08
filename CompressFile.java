@@ -11,17 +11,34 @@ public class CompressFile {
 
     public static void compressFile(File source, File target) throws IOException {
 
+        // vincent
         /** pass to a method that reads the file in (line by line) using the Scanner class
          * returns a String containing the full file's text. */
-
-        // vincent
         String messageInput = readFile(source);
-        System.out.println(messageInput); // print string test, should output entire text from any inputted .txt file
+        System.out.println(messageInput); // print string test, should output entire text from any inputted .txt file (Remove when done)
 
         // vincent
         /** pass that String containing the full file's text to calculateFrequencies.
          * That should return an array of counts. */
         int[] counts = calculateFrequencies(messageInput); // similar to my getCharacterFrequency method
+
+        /** Prints ASCII code, character, and frequency to check
+         * CAN DELETE WHEN WE'RE CLOSE TO FINISHING */
+        System.out.printf("%-15s%-15s%-15s\n", "ASCII Code", "Character", "Frequency");
+        for (int i = 0; i < counts.length; i++) {
+            if (counts[i] != 0) {// (char)i is not in text if counts[i] is 0
+                if (i == 10) { // ASCII for 10 is new line
+                    System.out.printf("%-15d%-15s%-15d\n", i, "New Line", counts[i]);
+                }
+                else if (i == 13) { // ASCII for 13 is Carriage Return (Ignore when decompressing)
+                    System.out.printf("%-15d%-15s%-15d\n", i, "CR", counts[i]);
+                }
+                else {
+                    System.out.printf("%-15d%-15s%-15d\n", i, (char)i + "", counts[i]);
+                }
+            }
+        }
+
 
         /** Build the Huffman Tree.
          * Pass the array of counts into the function to get a huffman tree.
@@ -32,7 +49,7 @@ public class CompressFile {
         String[] charKey = getCode() // calls assignCode
 
         // vincent
-        /** Get the actual code that we want to put int the output file. */
+        /** Get the actual code that we want to put into the output file. */
         String outputMessage = writeMessage(charKey, messageInput);
 
         ObjectOutputStream oos = new ObjectOutputStream(new FileInputStream(target));
@@ -56,6 +73,22 @@ public class CompressFile {
         String content = input.useDelimiter("\\Z").next(); // delimiter allows entire text to be read instead of single word using .next()
         input.close();
         return content;
+    }
+
+    /**
+     * Takes a string and casts each character as an integer to convert it into ASCII code, increasing
+     * the count by 1 using the ASCII code of the character as the index
+     * @param text String to count frequency of characters for
+     * @return Integer array containing counts of each character
+     * @author Vincent Tran
+     */
+    public static int[] calculateFrequencies(String text) {
+        int[] counts = new int[256];
+
+        for (int i = 0; i < text.length(); i++) {
+            counts[(int)text.charAt(i)]++; // count the character in text
+        }
+        return counts;
     }
 
     /** Run "java CompressFile sourceFile.txt compressedFile.txt" in terminal to test. */
