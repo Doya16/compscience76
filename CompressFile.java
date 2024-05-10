@@ -66,7 +66,7 @@ public class CompressFile {
 
         // arshmeet
         /** Get the Huffman Codes from the tree for each ASCII character. */
-        String[] charKey = getCode() // calls assignCode
+        String[] charKey = getCode(hf.root) // calls assignCode
 
         // vincent
         /** Get the actual code that we want to put into the output file. */
@@ -130,6 +130,32 @@ public class CompressFile {
     }
 
     /** get the codes */
+    public static String[] getCode(HuffmanTree.HuffmanNode root) {
+        // if the tree is empty...
+        if (root == null)
+            return null;
+        // the string array of codes is 256, one for each ASCII character
+        String[] encoding = new String[256];
+        // fill the array with the code for each character
+        assignCode(root, encoding);
+    }
+
+    public static void assignCode(HuffmanTree.HuffmanNode root, String[] encoding) {
+        if (root.left != null) {
+            // add zeros going leftwards
+            root.left.code = root.code + "0";
+            assignCode(root.left, encoding);
+
+            // add ones going rightwards
+            root.right.code = root.code + "1";
+            assignCode(root.right, encoding);
+        } else {
+            // when you hit the leaf (containing characters), save the code that has been built
+            // in the recrusive calls
+            code[(int) root.element ] = root.code;
+        }
+
+    }
 
 
 
