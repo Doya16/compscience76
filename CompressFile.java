@@ -1,7 +1,6 @@
 import java.io.*;
+import java.util.Arrays;
 import java.util.Scanner;
-import java.lang.*;
-import java.util.*;
 
 /**
  * Module 15: Programming Project
@@ -49,13 +48,13 @@ public class CompressFile {
         for (int i = 0; i < frequencies.length; i++) {
             if (frequencies[i] != 0) {// (char)i is not in text if counts[i] is 0
                 if (i == 10) { // ASCII for 10 is new line
-                    System.out.printf("%-15d%-15s%-15d\n", i, "New Line", counts[i]);
+                    System.out.printf("%-15d%-15s%-15d\n", i, "New Line", frequencies[i]);
                 }
                 else if (i == 13) { // ASCII for 13 is Carriage Return (Ignore when decompressing)
-                    System.out.printf("%-15d%-15s%-15d\n", i, "CR", counts[i]);
+                    System.out.printf("%-15d%-15s%-15d\n", i, "CR", frequencies[i]);
                 }
                 else {
-                    System.out.printf("%-15d%-15s%-15d\n", i, (char)i + "", counts[i]);
+                    System.out.printf("%-15d%-15s%-15d\n", i, (char)i + "", frequencies[i]);
                 }
             }
         }
@@ -68,7 +67,7 @@ public class CompressFile {
 
         // arshmeet
         /** Get the Huffman Codes from the tree for each ASCII character. */
-        String[] charKey = HuffmanTree.getCode(hf.root) // calls assignCode
+        String[] charKey = getCode(hf.root); // calls assignCode
 
         // vincent
         /** Get the actual code that we want to put into the output file. */
@@ -76,11 +75,10 @@ public class CompressFile {
 
         // arshmeet
         ObjectOutputStream oos = new ObjectOutputStream(new BitOutputStream(target));
-        output.writeObject(hf);
-        output.writeObject(outputMessage); // write huffman codes to target file
+        oos.writeObject(outputMessage); // write huffman codes to target file
 
-        output.flush();
-        output.close();
+        oos.flush();
+        oos.close();
     }
 
     /**
@@ -117,7 +115,7 @@ public class CompressFile {
     public static HuffmanTree getHuffmanTree(int[] frequencies) {
         // get a min heap
         Heap<HuffmanTree> minheap = new Heap<>(); //heap of type Type HuffmanTree
-        for(int i = 0; i < frequencies.length(); i++) {
+        for(int i = 0; i < frequencies.length; i++) {
             minheap.add(new HuffmanTree(frequencies[i], (char)i));
         }
 
@@ -129,124 +127,7 @@ public class CompressFile {
             minheap.add(new HuffmanTree(h1, h2));
         }
 
-        return heap.remove(); // the last tree (with all of the lower ones under it) is our tree
-    }
-
-/** Needed for the Huffman Tree. */
-class Heap<E extends Comparable<E>> implements Serializable {
-    private java.util.ArrayList<E> list = new java.util.ArrayList<E>();
-
-    /** Create a default heap */
-    public Heap() {
-    }
-
-    /** Create a heap from an array of objects */
-    public Heap(E[] objects) {
-        for (int i = 0; i < objects.length; i++)
-        add(objects[i]);
-    }
-
-    /** Add a new object into the heap */
-    public void add(E newObject) {
-        list.add(newObject); // Append to the heap
-        int currentIndex = list.size() - 1; // The index of the last node
-
-        while (currentIndex > 0) {
-        int parentIndex = (currentIndex - 1) / 2;
-        // Swap if the current object is greater than its parent
-        if (list.get(currentIndex).compareTo(
-            list.get(parentIndex)) > 0) {
-            E temp = list.get(currentIndex);
-            list.set(currentIndex, list.get(parentIndex));
-            list.set(parentIndex, temp);
-        }
-        else
-            break; // the tree is a heap now
-
-        currentIndex = parentIndex;
-        }
-    }
-
-    /** Remove the root from the heap */
-    public E remove() {
-        if (list.size() == 0) return null;
-
-        E removedObject = list.get(0);
-        list.set(0, list.get(list.size() - 1));
-        list.remove(list.size() - 1);
-
-        int currentIndex = 0;
-        while (currentIndex < list.size()) {
-            int leftChildIndex = 2 * currentIndex + 1;
-            int rightChildIndex = 2 * currentIndex + 2;
-
-            // Find the maximum between two children
-            if (leftChildIndex >= list.size()) break; // The tree is a heap
-            int maxIndex = leftChildIndex;
-            if (rightChildIndex < list.size()) {
-                if (list.get(maxIndex).compareTo(
-                    list.get(rightChildIndex)) < 0) {
-                maxIndex = rightChildIndex;
-                }
-            }
-
-            // Swap if the current node is less than the maximum
-            if (list.get(currentIndex).compareTo(list.get(maxIndex)) < 0) {
-                E temp = list.get(maxIndex);
-                list.set(maxIndex, list.get(currentIndex));
-                list.set(currentIndex, temp);
-                currentIndex = maxIndex;
-            }
-            else
-                break; // The tree is a heap
-        }
-
-        return removedObject;
-    }
-
-    /** Get the number of nodes in the tree */
-    public int getSize() {
-        return list.size();
-    }
-}
-
-/** Inner class needed for the Huffman Tree Object. */
-static class HuffmanTree implements Comparable<Tree>, Serializable {
-
-    HuffmanNode root;
-
-    /**
-     * constructor for a huffman tree with children
-     */
-    public HuffmanTree(HuffmanTree h1, HuffmanTree h2) {
-        root = new HuffmanNode();
-        root.left = h1.root;
-        root.right = h2.root;
-        root.weight = h1.root.weight + h2.root.weight;
-    }
-
-    /**
-     * constructor for leaf
-     */
-    public Tree(int weight, char data) {
-        root = new HuffmanNode(weight, data);
-    }
-
-    /**
-     * should implement compareTo() in reverse order:
-     * Because heap we have created is a max heap.
-     * But we want the minimum frequency at the top so that when we're merging trees, we're picking off the smallest
-     * elements each time.
-     */
-    @Override
-    public int compareTo(HuffmanTree h) {
-        bool hDifference = this.root.weight > h.root.weight;
-        if (hDifference)
-            return -1;
-        else if (this.root.weight == h.root.weight)
-            return 0;
-        else
-            return 1;
+        return minheap.remove(); // the last tree (with all of the lower ones under it) is our tree
     }
 
     /** get the codes */
@@ -258,6 +139,7 @@ static class HuffmanTree implements Comparable<Tree>, Serializable {
         String[] encoding = new String[256];
         // fill the array with the code for each character
         assignCode(root, encoding);
+        return encoding;
     }
 
     public static void assignCode(HuffmanTree.HuffmanNode root, String[] encoding) {
@@ -272,142 +154,152 @@ static class HuffmanTree implements Comparable<Tree>, Serializable {
         } else {
             // when you hit the leaf (containing characters), save the code that has been built
             // in the recrusive calls
-            code[(int) root.element] = root.code;
+            encoding[(int) root.data] = root.code;
         }
     }
 
-    /**
-     * Need Inner Class for the HuffmanNode
-     */
-    public class HuffmanNode implements Serializable {
-        /**
-         * data holds the character at each node.
-         * weight holds the weight of the node.
-         * left and right and the children of the node
-         * code is path of 0s or 1s that lead to the node.
-         */
-        char data;
-        int weight;
-        HuffmanNode left;
-        HuffmanNode right;
-        String code = "";
-
-        /**
-         * default constructor.
-         */
-        public Node() {
+    public static String writeMessage(String[] charKey, String messageInput) {
+        String message = "";
+        //System.out.println(Arrays.toString(charKey));
+        for (String key: charKey) {
+            message += key;
         }
-
-        /**
-         * value constructor gives each node character and weight
-         */
-        public Node(int weight, char data) {
-            this.weight = weight;
-            this.data = data;
-        }
+        return message;
     }
 }
 
-/**
- * BitOutputStream will write either one bit at a time or a string of bits into a file.
- * @author Arshmeet Kaur
- */
+    /** Needed for the Huffman Tree. */
+    class Heap<E extends Comparable<E>> implements Serializable {
+        private java.util.ArrayList<E> list = new java.util.ArrayList<E>();
 
-class BitOutputStream implements Serializable {
-
-    /**
-     * Variables:
-     * streamOut is the FileOutputStream used for all operations in this class's objects.
-     * we define a Stringbuilder byteString for later use. We will build an 8 character long Stringbuilder, then write it as a byte into the file.
-     */
-
-    private FileOutputStream streamOut;
-    private static StringBuilder byteString = new StringBuilder(8);
-    int bitHolderByteArray = 0;
-
-    int byteLength = 0;
-
-    /**
-     * <p> This is a constructor, it verifies the existence of the file and creates the stream </p>
-     * @param f the File object a person has used to creat the BitOutputStream Object
-     */
-    public BitOutputStream(File f) throws IOException{
-        streamOut = new FileOutputStream(f);
-    }
-
-    /**
-     * <p> writeBit() simply writes one character that the user wishes to write.
-     * It must be a 0 or 1 and this is checked with a conditional.
-     * Each byte holds 8 of the characters a user can enter before it gets written to the file.
-     * </p>
-     * @param bit one character which the user wishes to write.
-     */
-    public void writeBit(char bit) throws IOException{
-        //check that the bit is either 0 or 1
-        if (bit == '0' | bit == '1'){
-            byteLength++;
-            int incomingByte =  (bit -'0');
-            System.out.println("incomingByte.."+incomingByte);
-            //move the existing byte by one place
-            bitHolderByteArray = (bitHolderByteArray << 1)| incomingByte;
-            //append to the right most bit value in the
-            String binaryString = Integer.toBinaryString(bitHolderByteArray);
-            System.out.println("length "+ byteLength + " bit =>" + binaryString);
-
-            if(byteLength == 8) {
-                binaryString = Integer.toBinaryString(bitHolderByteArray);
-                System.out.println("byte =>" + binaryString);
-                //write the 8 bits to file
-                streamOut.write(bitHolderByteArray);
-                //reset the counter
-                byteLength = 0;
-                //reset the byte
-                bitHolderByteArray = 0;
-            }
-        } else {
-            throw new InputMismatchException("Input can only be '0' or '1' whether characters or a whole String");
+        /** Create a default heap */
+        public Heap() {
         }
-    }
 
-    /**
-     * <p> This method allows the user to write a whole string of characters to the file.
-     * Every string is tested to see if it only consists of 1 and 0.
-     * Every string is split into characters.
-     * The characters are then sent one by one to the writeBit() method. </p>
-     * @param bitString is the string to be written.
-     */
-    public void writeBits(String bitString) throws IOException{
-        char[] binChars = bitString.toCharArray();
-        boolean correctFormat = true;
-        for (char b: binChars){
-            if (b != '1' && b != '0'){
-                correctFormat = false;
+        /** Create a heap from an array of objects */
+        public Heap(E[] objects) {
+            for (int i = 0; i < objects.length; i++)
+            add(objects[i]);
+        }
+
+        /** Add a new object into the heap */
+        public void add(E newObject) {
+            list.add(newObject); // Append to the heap
+            int currentIndex = list.size() - 1; // The index of the last node
+
+            while (currentIndex > 0) {
+            int parentIndex = (currentIndex - 1) / 2;
+            // Swap if the current object is greater than its parent
+            if (list.get(currentIndex).compareTo(
+                list.get(parentIndex)) > 0) {
+                E temp = list.get(currentIndex);
+                list.set(currentIndex, list.get(parentIndex));
+                list.set(parentIndex, temp);
+            }
+            else
+                break; // the tree is a heap now
+
+            currentIndex = parentIndex;
             }
         }
 
-        if (correctFormat){
-            for (char b: binChars){
-                writeBit(b);
+        /** Remove the root from the heap */
+        public E remove() {
+            if (list.size() == 0) return null;
+
+            E removedObject = list.get(0);
+            list.set(0, list.get(list.size() - 1));
+            list.remove(list.size() - 1);
+
+            int currentIndex = 0;
+            while (currentIndex < list.size()) {
+                int leftChildIndex = 2 * currentIndex + 1;
+                int rightChildIndex = 2 * currentIndex + 2;
+
+                // Find the maximum between two children
+                if (leftChildIndex >= list.size()) break; // The tree is a heap
+                int maxIndex = leftChildIndex;
+                if (rightChildIndex < list.size()) {
+                    if (list.get(maxIndex).compareTo(
+                        list.get(rightChildIndex)) < 0) {
+                    maxIndex = rightChildIndex;
+                    }
+                }
+
+                // Swap if the current node is less than the maximum
+                if (list.get(currentIndex).compareTo(list.get(maxIndex)) < 0) {
+                    E temp = list.get(maxIndex);
+                    list.set(maxIndex, list.get(currentIndex));
+                    list.set(currentIndex, temp);
+                    currentIndex = maxIndex;
+                }
+                else
+                    break; // The tree is a heap
             }
-        } else {
-            throw new InputMismatchException("Input can only be '0' or '1' whether characters or a whole String");
+
+            return removedObject;
+        }
+
+        /** Get the number of nodes in the tree */
+        public int getSize() {
+            return list.size();
         }
     }
 
+    /** Inner class needed for the Huffman Tree Object. */
+    class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
 
-    /**
-     * <p> The close method:
-     * At the end of all user's input the close method will turn those "unfinished" (<8 bit) strings into 8 bit strings and write them:
-     * zeros are concatenated to the front of byteString.toString() according to how many zeros are needed (calculated in the forloop)
-     * the byteString is then parsed into a base2 integer
-     * The file is closed at the end. </p>
-     */
-    public void close() throws IOException {
-        if (byteLength > 0) {
-            // add 0s to the remaining places
-            bitHolderByteArray <<= (8 - byteLength);
-            streamOut.write(bitHolderByteArray);
+        HuffmanNode root;
+
+        /** constructor for a huffman tree with children */
+        public HuffmanTree(HuffmanTree h1, HuffmanTree h2) {
+            root = new HuffmanNode();
+            root.left = h1.root;
+            root.right = h2.root;
+            root.weight = h1.root.weight + h2.root.weight;
         }
-        streamOut.close();
+
+        /** constructor for leaf */
+        public HuffmanTree(int weight, char data) {
+            root = new HuffmanNode(weight, data);
+        }
+
+        /** should implement compareTo() in reverse order:
+         * Because heap we have created is a max heap.
+         * But we want the minimum frequency at the top so that when we're merging trees, we're picking off the smallest
+         * elements each time.
+         * */
+        @Override
+        public int compareTo(HuffmanTree h) {
+            boolean hDifference = this.root.weight > h.root.weight;
+            if (hDifference)
+                return -1;
+            else if (this.root.weight == h.root.weight)
+                return 0;
+            else
+                return 1;
+        }
+
+        /** Need Inner Class for the HuffmanNode */
+        public class HuffmanNode implements Serializable {
+            /**
+             * data holds the character at each node.
+             * weight holds the weight of the node.
+             * left and right and the children of the node
+             * code is path of 0s or 1s that lead to the node.
+             */
+            char data;
+            int weight;
+            HuffmanNode left; HuffmanNode right;
+            String code = "";
+
+            /** default constructor. */
+            public HuffmanNode(){}
+            /** value constructor gives each node character and weight */
+            public HuffmanNode(int weight, char data) {
+                this.weight = weight;
+                this.data = data;
+            }
+
+        }
     }
-}
