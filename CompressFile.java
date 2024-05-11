@@ -1,5 +1,6 @@
 package compscience76;
 import java.io.*;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.InputMismatchException;
@@ -31,7 +32,7 @@ public class CompressFile {
         }
     }
 
-    public static void compressFile(File source, File target) throws IOException {
+    public static void compressFile(File source, File target) throws IOException, ClassNotFoundException {
 
         // vincent
         /** pass to a method that reads the file in (line by line) using the Scanner class
@@ -69,7 +70,8 @@ public class CompressFile {
 
         // arshmeet
         /** Get the Huffman Codes from the tree for each ASCII character. */
-        String[] charKey = getCode(hf.root); // calls assignCode
+        String[] charKey = hf.getCode(hf.root); // calls assignCode
+        System.out.println(Arrays.toString(charKey));
 
         // vincent
         /** Get the actual code that we want to put into the output file. */
@@ -77,6 +79,7 @@ public class CompressFile {
 
         // arshmeet
         ObjectOutputStream oos = new ObjectOutputStream(new BitOutputStream(target));
+        oos.writeObject(hf); // write the huffman tree
         oos.writeObject(outputMessage); // write huffman codes to target file
 
         oos.flush();
@@ -105,11 +108,21 @@ public class CompressFile {
      * @author Vincent Tran
      */
     public static int[] calculateFrequencies(String text) {
+        System.out.println("Entered frequencies");
         int[] frequencies = new int[256];
 
         for (int i = 0; i < text.length(); i++) {
-            frequencies[(int)text.charAt(i)]++; // count the character in text
+
+            char c = text.charAt(i);
+            int index = (int) c;
+
+            if (index > 256){
+                continue;
+            } else {
+                frequencies[index]++; // count the character in text
+            }
         }
+        System.out.println("exiting");
         return frequencies;
     }
 
@@ -132,41 +145,22 @@ public class CompressFile {
         return minheap.remove(); // the last tree (with all of the lower ones under it) is our tree
     }
 
-    /** get the codes */
-    public static String[] getCode(HuffmanTree.HuffmanNode root) {
-        // if the tree is empty...
-        if (root == null)
-            return null;
-        // the string array of codes is 256, one for each ASCII character
-        String[] encoding = new String[256];
-        // fill the array with the code for each character
-        assignCode(root, encoding);
-        return encoding;
-    }
-
-    public static void assignCode(HuffmanTree.HuffmanNode root, String[] encoding) {
-        if (root.left != null) {
-            // add zeros going leftwards
-            root.left.code = root.code + "0";
-            assignCode(root.left, encoding);
-
-            // add ones going rightwards
-            root.right.code = root.code + "1";
-            assignCode(root.right, encoding);
-        } else {
-            // when you hit the leaf (containing characters), save the code that has been built
-            // in the recrusive calls
-            encoding[(int) root.data] = root.code;
-        }
-    }
-
     public static String writeMessage(String[] charKey, String messageInput) {
-        String message = "";
-        //System.out.println(Arrays.toString(charKey));
-        for (String key: charKey) {
-            message += key;
+
+        StringBuilder message = new StringBuilder(); // empty string builder
+
+        for(int i = 0; i < messageInput.length(); i++) {
+            char currentCharacter = messageInput.charAt(i);
+            int asciiCode = currentCharacter;
+
+            if (asciiCode > 256) {
+                continue;
+            } else {
+                message.append(charKey[asciiCode]);
+            }
         }
-        return message;
+
+        return message.toString();
     }
 }
 
@@ -252,6 +246,7 @@ class Heap<E extends Comparable<E>> implements Serializable {
 class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
 
     HuffmanNode root;
+    String[] encodings;
 
     /** constructor for a huffman tree with children */
     public HuffmanTree(HuffmanTree h1, HuffmanTree h2) {
@@ -282,6 +277,35 @@ class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
             return 1;
     }
 
+    /** get the codes */
+    public String[] getCode(HuffmanTree.HuffmanNode root) {
+        // if the tree is empty...
+        if (root == null)
+            return null;
+        // the string array of codes is 256, one for each ASCII character
+        String[] encoding = new String[256];
+        // fill the array with the code for each character
+        assignCode(root, encoding);
+        this.encodings = encoding;
+        return encoding;
+    }
+
+    public static void assignCode(HuffmanTree.HuffmanNode root, String[] encoding) {
+        if (root.left != null) {
+            // add zeros going leftwards
+            root.left.code = root.code + "0";
+            assignCode(root.left, encoding);
+
+            // add ones going rightwards
+            root.right.code = root.code + "1";
+            assignCode(root.right, encoding);
+        } else {
+            // when you hit the leaf (containing characters), save the code that has been built
+            // in the recrusive calls
+            encoding[(int) root.data] = root.code;
+        }
+    }
+
     /** Need Inner Class for the HuffmanNode */
     public class HuffmanNode implements Serializable {
         /**
@@ -306,10 +330,7 @@ class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
     }
 }
 
-
-
 class BitOutputStream extends FileOutputStream implements Serializable {
-
 
     /**
      * Variables:
@@ -317,21 +338,11 @@ class BitOutputStream extends FileOutputStream implements Serializable {
      * we define a Stringbuilder byteString for later use. We will build an 8 character long Stringbuilder, then write it as a byte into the file.
      */
 
-
-
-
     private FileOutputStream streamOut;
     private static StringBuilder byteString = new StringBuilder(8);
     int bitHolderByteArray = 0;
 
-
-
-
     int byteLength = 0;
-
-
-
-
     /**
      * <p> This is a constructor, it verifies the existence of the file and creates the stream </p>
      * @param f the File object a person has used to creat the BitOutputStream Object
@@ -339,7 +350,6 @@ class BitOutputStream extends FileOutputStream implements Serializable {
     public BitOutputStream(File f) throws IOException{
         super(f);
     }
-
 
     /**
      * <p> writeBit() simply writes one character that the user wishes to write.
@@ -353,19 +363,13 @@ class BitOutputStream extends FileOutputStream implements Serializable {
         if (bit == '0' | bit == '1'){
             byteLength++;
             int incomingByte =  (bit -'0');
-            System.out.println("incomingByte.."+incomingByte);
             //move the existing byte by one place
             bitHolderByteArray = (bitHolderByteArray << 1)| incomingByte;
             //append to the right most bit value in the
             String binaryString = Integer.toBinaryString(bitHolderByteArray);
-            System.out.println("length "+ byteLength + " bit =>" + binaryString);
-
-
-
 
             if(byteLength == 8) {
                 binaryString = Integer.toBinaryString(bitHolderByteArray);
-                System.out.println("byte =>" + binaryString);
                 //write the 8 bits to file
                 streamOut.write(bitHolderByteArray);
                 //reset the counter
@@ -394,9 +398,6 @@ class BitOutputStream extends FileOutputStream implements Serializable {
             }
         }
 
-
-
-
         if (correctFormat){
             for (char b: binChars){
                 writeBit(b);
@@ -420,7 +421,5 @@ class BitOutputStream extends FileOutputStream implements Serializable {
             bitHolderByteArray <<= (8 - byteLength);
             streamOut.write(bitHolderByteArray);
         }
-        streamOut.close();
     }
 }
-
