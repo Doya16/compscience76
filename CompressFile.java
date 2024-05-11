@@ -1,9 +1,8 @@
 package compscience76;
-
 import java.io.*;
 import java.util.Arrays;
-import java.util.InputMismatchException;
 import java.util.Scanner;
+import java.util.InputMismatchException;
 
 /**
  * Module 15: Programming Project
@@ -307,7 +306,10 @@ class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
     }
 }
 
+
+
 class BitOutputStream extends FileOutputStream implements Serializable {
+
 
     /**
      * Variables:
@@ -316,12 +318,18 @@ class BitOutputStream extends FileOutputStream implements Serializable {
      */
 
 
+
+
     private FileOutputStream streamOut;
     private static StringBuilder byteString = new StringBuilder(8);
     int bitHolderByteArray = 0;
 
 
+
+
     int byteLength = 0;
+
+
 
 
     /**
@@ -331,6 +339,7 @@ class BitOutputStream extends FileOutputStream implements Serializable {
     public BitOutputStream(File f) throws IOException{
         super(f);
     }
+
 
     /**
      * <p> writeBit() simply writes one character that the user wishes to write.
@@ -352,6 +361,8 @@ class BitOutputStream extends FileOutputStream implements Serializable {
             System.out.println("length "+ byteLength + " bit =>" + binaryString);
 
 
+
+
             if(byteLength == 8) {
                 binaryString = Integer.toBinaryString(bitHolderByteArray);
                 System.out.println("byte =>" + binaryString);
@@ -366,7 +377,6 @@ class BitOutputStream extends FileOutputStream implements Serializable {
             throw new InputMismatchException("Input can only be '0' or '1' whether characters or a whole String");
         }
     }
-
 
     /**
      * <p> This method allows the user to write a whole string of characters to the file.
@@ -385,6 +395,8 @@ class BitOutputStream extends FileOutputStream implements Serializable {
         }
 
 
+
+
         if (correctFormat){
             for (char b: binChars){
                 writeBit(b);
@@ -393,6 +405,7 @@ class BitOutputStream extends FileOutputStream implements Serializable {
             throw new InputMismatchException("Input can only be '0' or '1' whether characters or a whole String");
         }
     }
+
 
     /**
      * <p> The close method:
@@ -410,3 +423,4 @@ class BitOutputStream extends FileOutputStream implements Serializable {
         streamOut.close();
     }
 }
+
