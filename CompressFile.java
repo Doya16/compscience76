@@ -1,9 +1,11 @@
 package compscience76;
+
 import java.io.*;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.InputMismatchException;
+import java.lang.instrument.Instrumentation;
 
 /**
  * Module 15: Programming Project
@@ -38,29 +40,12 @@ public class CompressFile {
         /** pass to a method that reads the file in (line by line) using the Scanner class
          * returns a String containing the full file's text. */
         String messageInput = readFile(source);
-        System.out.println(messageInput); // print string test, should output entire text from any inputted .txt file (Remove when done)
+        // System.out.println(messageInput); // print string test, should output entire text from any inputted .txt file (Remove when done)
 
         // vincent
         /** pass that String containing the full file's text to calculateFrequencies.
          * That should return an array of counts. */
         int[] frequencies = calculateFrequencies(messageInput); // similar to my getCharacterFrequency method
-
-        /** Prints ASCII code, character, and frequency to check
-         * CAN DELETE WHEN WE'RE CLOSE TO FINISHING */
-        System.out.printf("%-15s%-15s%-15s\n", "ASCII Code", "Character", "Frequency");
-        for (int i = 0; i < frequencies.length; i++) {
-            if (frequencies[i] != 0) {// (char)i is not in text if counts[i] is 0
-                if (i == 10) { // ASCII for 10 is new line
-                    System.out.printf("%-15d%-15s%-15d\n", i, "New Line", frequencies[i]);
-                }
-                else if (i == 13) { // ASCII for 13 is Carriage Return (Ignore when decompressing)
-                    System.out.printf("%-15d%-15s%-15d\n", i, "CR", frequencies[i]);
-                }
-                else {
-                    System.out.printf("%-15d%-15s%-15d\n", i, (char)i + "", frequencies[i]);
-                }
-            }
-        }
 
         // arshmeet
         /** Build the Huffman Tree.
@@ -71,19 +56,61 @@ public class CompressFile {
         // arshmeet
         /** Get the Huffman Codes from the tree for each ASCII character. */
         String[] charKey = hf.getCode(hf.root); // calls assignCode
-        System.out.println(Arrays.toString(charKey));
+        //  System.out.println(Arrays.toString(charKey));
+
+        System.out.printf("%-15s%-15s%-15s%-15s\n", "ASCII Code", "Character", "Frequency", "Encoding");
+        for (int i = 0; i < frequencies.length; i++) {
+            if (frequencies[i] != 0) {
+                if (i == 10) { // ASCII for 10 is new line
+                    System.out.printf("%-15d%-15s%-15d%-15s\n", i, "New Line", frequencies[i], charKey[i]);
+                } else if (i == 13) { // ASCII for 13 is Carriage Return (Ignore when decompressing)
+                    System.out.printf("%-15d%-15s%-15d%-15s\n", i, "CR", frequencies[i], charKey[i]);
+                } else {
+                    System.out.printf("%-15d%-15s%-15d%-15s\n", i, (char) i + "", frequencies[i], charKey[i]);
+                }
+            }
+        }
 
         // vincent
         /** Get the actual code that we want to put into the output file. */
         String outputMessage = writeMessage(charKey, messageInput);
+        System.out.println("Message to be printed to file "+outputMessage);
 
         // arshmeet
-        ObjectOutputStream oos = new ObjectOutputStream(new BitOutputStream(target));
-        oos.writeObject(hf); // write the huffman tree
-        oos.writeObject(outputMessage); // write huffman codes to target file
+        BitOutputStream bos = new BitOutputStream(target, true);
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(hf); // writing huffman
+        bos.writeInt(outputMessage.length());
+        bos.writeBits(outputMessage); // write huffman codes to target file
 
         oos.flush();
+        bos.flush();
         oos.close();
+    }
+
+    public static String decodeBinaryString(String binaryString, HuffmanTree huffmanTree) {
+        StringBuilder decodedString = new StringBuilder();
+        HuffmanTree.HuffmanNode currentNode = huffmanTree.root;
+
+
+        for (int i = 0; i < binaryString.length(); i++) {
+            char bit = binaryString.charAt(i);
+            if (bit == '0') {
+                currentNode = currentNode.left;
+            } else if (bit == '1') {
+                currentNode = currentNode.right;
+            }
+
+
+            if (currentNode.left == null && currentNode.right == null) {
+                // Reached a leaf node, append the character and reset to root
+                decodedString.append(currentNode.data);
+                currentNode = huffmanTree.root;
+            }
+        }
+
+
+        return decodedString.toString();
     }
 
     /**
@@ -127,22 +154,26 @@ public class CompressFile {
     }
 
     /** Construct the Huffman Tree. */
-    public static HuffmanTree getHuffmanTree(int[] frequencies) {
-        // get a min heap
-        Heap<HuffmanTree> minheap = new Heap<>(); //heap of type Type HuffmanTree
-        for(int i = 0; i < frequencies.length; i++) {
-            minheap.add(new HuffmanTree(frequencies[i], (char)i));
+    public static HuffmanTree getHuffmanTree(int[] counts) {
+        Heap<HuffmanTree> heap = new Heap<>();
+        for (int i = 0; i < counts.length; i++) {
+            if (counts[i] > 0)
+                heap.add(new HuffmanTree(counts[i], (char)i)); // A leaf node tree
         }
 
-        while (minheap.getSize() > 1) {
-            // remove the two smallest weight trees
-            HuffmanTree h1 = minheap.remove();
-            HuffmanTree h2 = minheap.remove();
-            // merge those trees into one tree with there combined weights
-            minheap.add(new HuffmanTree(h1, h2));
+        if (heap.getSize() == 1){
+            // construct a new tree with the actual Tree in the heap a new character with no weight
+            // this way there will be a node to traverse through so we can get a code
+            heap.add(new HuffmanTree(heap.remove(), new HuffmanTree(0, ' ')));
         }
 
-        return minheap.remove(); // the last tree (with all of the lower ones under it) is our tree
+        while (heap.getSize() > 1) {
+            HuffmanTree t1 = heap.remove(); // Remove the smallest weight trees
+            HuffmanTree t2 = heap.remove(); // Remove the next smallest weight
+            heap.add(new HuffmanTree(t1, t2)); // Combine two trees
+        }
+
+        return heap.remove(); // The final tree
     }
 
     public static String writeMessage(String[] charKey, String messageInput) {
@@ -301,7 +332,7 @@ class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
             assignCode(root.right, encoding);
         } else {
             // when you hit the leaf (containing characters), save the code that has been built
-            // in the recrusive calls
+            // in the recursive calls
             encoding[(int) root.data] = root.code;
         }
     }
@@ -332,94 +363,43 @@ class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
 
 class BitOutputStream extends FileOutputStream implements Serializable {
 
-    /**
-     * Variables:
-     * streamOut is the FileOutputStream used for all operations in this class's objects.
-     * we define a Stringbuilder byteString for later use. We will build an 8 character long Stringbuilder, then write it as a byte into the file.
-     */
+    private int currentByte = 0;
+    private int numBits = 0;
+    boolean append;
 
-    private FileOutputStream streamOut;
-    private static StringBuilder byteString = new StringBuilder(8);
-    int bitHolderByteArray = 0;
-
-    int byteLength = 0;
-    /**
-     * <p> This is a constructor, it verifies the existence of the file and creates the stream </p>
-     * @param f the File object a person has used to creat the BitOutputStream Object
-     */
-    public BitOutputStream(File f) throws IOException{
-        super(f);
+    public BitOutputStream(File f, boolean append) throws IOException {
+        super(f, append);
+        this.append = append;
     }
 
-    /**
-     * <p> writeBit() simply writes one character that the user wishes to write.
-     * It must be a 0 or 1 and this is checked with a conditional.
-     * Each byte holds 8 of the characters a user can enter before it gets written to the file.
-     * </p>
-     * @param bit one character which the user wishes to write.
-     */
-    public void writeBit(char bit) throws IOException{
-        //check that the bit is either 0 or 1
-        if (bit == '0' | bit == '1'){
-            byteLength++;
-            int incomingByte =  (bit -'0');
-            //move the existing byte by one place
-            bitHolderByteArray = (bitHolderByteArray << 1)| incomingByte;
-            //append to the right most bit value in the
-            String binaryString = Integer.toBinaryString(bitHolderByteArray);
+    public void writeInt(int count) throws IOException {
+        super.write(count);
+    }
 
-            if(byteLength == 8) {
-                binaryString = Integer.toBinaryString(bitHolderByteArray);
-                //write the 8 bits to file
-                streamOut.write(bitHolderByteArray);
-                //reset the counter
-                byteLength = 0;
-                //reset the byte
-                bitHolderByteArray = 0;
+    public void writeBits(String bitString) throws IOException {
+        for (char b : bitString.toCharArray()) {
+
+            if (b == '0' || b == '1') {
+                numBits++;
+                int currentBit =  ( ((int)b)- 48);
+                currentByte = (currentByte << 1) | currentBit;
+                if (numBits == 8) {
+                    super.write(currentByte);
+                    numBits = 0;
+                    currentByte = 0;
+                }
+            } else {
+                throw new InputMismatchException("Input can only be '0' or '1'");
             }
-        } else {
-            throw new InputMismatchException("Input can only be '0' or '1' whether characters or a whole String");
+
         }
     }
 
-    /**
-     * <p> This method allows the user to write a whole string of characters to the file.
-     * Every string is tested to see if it only consists of 1 and 0.
-     * Every string is split into characters.
-     * The characters are then sent one by one to the writeBit() method. </p>
-     * @param bitString is the string to be written.
-     */
-    public void writeBits(String bitString) throws IOException{
-        char[] binChars = bitString.toCharArray();
-        boolean correctFormat = true;
-        for (char b: binChars){
-            if (b != '1' && b != '0'){
-                correctFormat = false;
-            }
-        }
-
-        if (correctFormat){
-            for (char b: binChars){
-                writeBit(b);
-            }
-        } else {
-            throw new InputMismatchException("Input can only be '0' or '1' whether characters or a whole String");
-        }
-    }
-
-
-    /**
-     * <p> The close method:
-     * At the end of all user's input the close method will turn those "unfinished" (<8 bit) strings into 8 bit strings and write them:
-     * zeros are concatenated to the front of byteString.toString() according to how many zeros are needed (calculated in the forloop)
-     * the byteString is then parsed into a base2 integer
-     * The file is closed at the end. </p>
-     */
     public void close() throws IOException {
-        if (byteLength > 0) {
-            // add 0s to the remaining places
-            bitHolderByteArray <<= (8 - byteLength);
-            streamOut.write(bitHolderByteArray);
+        if (numBits > 0) {
+            currentByte <<= (8 - numBits);
+            super.write(currentByte);
         }
+        super.close();
     }
 }
