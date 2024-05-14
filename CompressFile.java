@@ -8,14 +8,20 @@ import java.util.InputMismatchException;
 import java.lang.instrument.Instrumentation;
 
 /**
- * Module 15: Programming Project
+ * Module 15, Programming Project:
+ * <br> 1. This class compresses a text file using Huffman coding.
+ * <br> 2. It takes an input file, builds a Huffman Tree based on the contents of the text,
+ * and writes the Huffman Tree and encoded output message to a specified target file.
  * @author Arshmeet Kaur
  * @author Vincent Tran
  */
-
 public class CompressFile {
 
-    /** Run "java CompressFile sourceFile.txt compressedFile.txt" in terminal to test. */
+    /**
+     * This main method ensures that the program works from the commmand line.
+     * @author Vincent Tran
+     * @param args user should provide the complete path to an input file and output file
+     *             seperated with a space.*/
     public static void main(String[] args) {
         if(args.length == 2) {
             File inputFile = new File(args[0]);
@@ -30,34 +36,48 @@ public class CompressFile {
             }
         }
         else {
-            System.out.println("Usage: java CompressFile (InputFile) (OutputFile)");
+            System.out.println("Usage: java CompressFile.java (InputFile) (OutputFile)");
         }
     }
 
+    /**
+     * This is the method which calls to all other methods to read the file, calculate frequencies
+     * of characters within the file, construct a huffman tree, get the codes that correspond to each character,
+     * construct the message in the Huffman encoding and output the tree and message to the target file
+     * in that order.
+     * @param source the source file the user wishes to compress.
+     * @param target the intended location of the compressed contents.
+     * @throws IOException to handle any missing files being put at source/target.
+     * @throws ClassNotFoundException to deal with typecasting errors.
+     * @author Vincent Tran
+     * @author Arshmeet Kaur
+     */
     public static void compressFile(File source, File target) throws IOException, ClassNotFoundException {
 
-        // vincent
-        /** pass to a method that reads the file in (line by line) using the Scanner class
-         * returns a String containing the full file's text. */
+        /* Author: Vincent
+        readFile(): returns a String containing the full file's text.
+        */
         String messageInput = readFile(source);
-        // System.out.println(messageInput); // print string test, should output entire text from any inputted .txt file (Remove when done)
 
-        // vincent
-        /** pass that String containing the full file's text to calculateFrequencies.
-         * That should return an array of counts. */
+        /* Author: Vincent
+        calculateFrequencies(): takes messageInput (full file's text in a string)
+        returns an array of the frequencies of each ASCII character in the messageInput.
+        */
         int[] frequencies = calculateFrequencies(messageInput); // similar to my getCharacterFrequency method
 
-        // arshmeet
-        /** Build the Huffman Tree.
-         * Pass the array of counts into the function to get a huffman tree.
-         * Returns a tree object. */
+        /* Author: Arshmeet
+        getHuffmanTree(): takes the array of frequenices of each character.
+        returns a huffman tree object.
+        */
         HuffmanTree hf = getHuffmanTree(frequencies);
 
-        // arshmeet
-        /** Get the Huffman Codes from the tree for each ASCII character. */
+        /* Author: Arshmeet
+        getCode(): takes the huffman tree object's root.
+        returns a key of the huffman codes for each ASCII character in the original file.
+         */
         String[] charKey = hf.getCode(hf.root); // calls assignCode
-        //  System.out.println(Arrays.toString(charKey));
 
+        /* NOTE: Delete when done. */
         System.out.printf("%-15s%-15s%-15s%-15s\n", "ASCII Code", "Character", "Frequency", "Encoding");
         for (int i = 0; i < frequencies.length; i++) {
             if (frequencies[i] != 0) {
@@ -71,18 +91,23 @@ public class CompressFile {
             }
         }
 
-        // vincent
-        /** Get the actual code that we want to put into the output file. */
+        /* Author: Vincent
+        writeMessage() takes the array of codes for each character and the input message
+        returns the encoded method that we want to put into the output file. */
         String outputMessage = writeMessage(charKey, messageInput);
-        System.out.println("Message to be printed to file "+outputMessage);
 
-        // arshmeet
+        /* Author: Arshmeet
+        - constructs a BitOutputStream object (which extends FileOutputStream)
+        - - creates in append mode.
+        - constructs an ObjectOutputStream wrapping around the BitOutputStream
+        - writes the Huffman Tree Object, length of the message outputted and message outputted
+        in that order.
+        */
         BitOutputStream bos = new BitOutputStream(target, true);
         ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(hf); // writing huffman
+        oos.writeObject(hf);
         bos.writeInt(outputMessage.length());
-        bos.writeBits(outputMessage); // write huffman codes to target file
-
+        bos.writeBits(outputMessage);
         oos.flush();
         bos.flush();
         oos.close();
@@ -114,12 +139,13 @@ public class CompressFile {
     }
 
     /**
-     * Takes input file and returns a string containing entire text from the file
-     * @param source File to read text from
-     * @return String containing text from file
-     * @throws FileNotFoundException
-     * @author Vincent Tran
-     */
+         * Takes input file and returns a string containing entire text from the file.
+         * Utilizes the scanner class.
+         * @param source File to read text from
+         * @return String containing text from file
+         * @throws FileNotFoundException
+         * @author Vincent Tran
+         */
     public static String readFile(File source) throws FileNotFoundException {
         Scanner input = new Scanner(source);
         String content = input.useDelimiter("\\Z").next(); // delimiter allows entire text to be read instead of single word using .next()
@@ -135,7 +161,6 @@ public class CompressFile {
      * @author Vincent Tran
      */
     public static int[] calculateFrequencies(String text) {
-        System.out.println("Entered frequencies");
         int[] frequencies = new int[256];
 
         for (int i = 0; i < text.length(); i++) {
@@ -153,29 +178,59 @@ public class CompressFile {
         return frequencies;
     }
 
-    /** Construct the Huffman Tree. */
-    public static HuffmanTree getHuffmanTree(int[] counts) {
-        Heap<HuffmanTree> heap = new Heap<>();
-        for (int i = 0; i < counts.length; i++) {
-            if (counts[i] > 0)
-                heap.add(new HuffmanTree(counts[i], (char)i)); // A leaf node tree
+    /**
+     * Constructs a Huffman Tree using a heap.
+     * <br> 1. Creates a forest of Huffman Trees with their weights (frequencies) and their data (characters).
+     * <br> 2. Inserts the forest of trees into a min heap.
+     * <br> 3. Removes the two lowest-weighted trees, combines them, inserts the new tree.
+     * <br> 4. At the end, removes the final Huffman Tree from the heap.
+     * @param frequencies the array of frequencies for each character. In conjunction with the character itself,
+     *                    this information is used to create leaf nodes to insert into the heap.
+     * @return The Huffman Tree Object
+     * @author Arshmeet Kaur
+     */
+    public static HuffmanTree getHuffmanTree(int[] frequencies) {
+
+        Heap<HuffmanTree> minheap = new Heap<>();
+
+        int i = 0;
+        while (i < frequencies.length) {
+            if (frequencies[i] > 0)
+                minheap.add(new HuffmanTree(frequencies[i], (char)i));
+            i++;
         }
 
-        if (heap.getSize() == 1){
-            // construct a new tree with the actual Tree in the heap a new character with no weight
-            // this way there will be a node to traverse through so we can get a code
-            heap.add(new HuffmanTree(heap.remove(), new HuffmanTree(0, ' ')));
+        /* Special Case: there's only one character in the file. */
+        if (minheap.getSize() == 1){
+            /* construct a new tree with the actual Tree in the heap a new character with no weight
+            this way there will be a node to traverse through so we can get a code */
+            minheap.add(new HuffmanTree(minheap.remove(), new HuffmanTree(0, ' ')));
         }
 
-        while (heap.getSize() > 1) {
-            HuffmanTree t1 = heap.remove(); // Remove the smallest weight trees
-            HuffmanTree t2 = heap.remove(); // Remove the next smallest weight
-            heap.add(new HuffmanTree(t1, t2)); // Combine two trees
+        /* Regular case: follow the huffman coding algorithm.
+        Combine the two lowest-weight trees (.remove() from a minheap) into one node
+        and reinsert into the minheap.
+        At the end, the top of the heap is the final tree with the highest frequencies at the top.
+         */
+        while (minheap.getSize() > 1) {
+            HuffmanTree h1 = minheap.remove(); // Remove the smallest weight trees
+            HuffmanTree h2 = minheap.remove(); // Remove the next smallest weight
+            minheap.add(new HuffmanTree(h1, h2)); // Combine two trees
         }
-
-        return heap.remove(); // The final tree
+        return minheap.remove();
     }
 
+    /**
+     * Uses the key which maps codes to each character to convert each character
+     * in the given string to its huffman code.
+     * <br> appends each encoded character to a stringbuilder.
+     * <br> once all characters are converted, strinbuilder converted to string and returned.
+     *
+     * @param charKey the array of codes for each character
+     * @param messageInput the ASCII string that we want to convert to a huffman code string
+     * @return the message (a string of 1's and 0s) to write to the target file.
+     * @author Vincent Tran
+     */
     public static String writeMessage(String[] charKey, String messageInput) {
 
         StringBuilder message = new StringBuilder(); // empty string builder
@@ -195,7 +250,11 @@ public class CompressFile {
     }
 }
 
-/** Needed for the Huffman Tree. */
+/**
+ * @TO_DO: Vincent, add comments.
+ * @author Vincent Tran
+ * @param <E> This will be used for the tree, to create a Heap of type HuffmanTree
+ */
 class Heap<E extends Comparable<E>> implements Serializable {
     private java.util.ArrayList<E> list = new java.util.ArrayList<E>();
 
@@ -273,13 +332,32 @@ class Heap<E extends Comparable<E>> implements Serializable {
     }
 }
 
-/** Inner class needed for the Huffman Tree Object. */
+/**
+ *
+ * This class creates a Huffman Tree for encoding/decoding characters.
+ * <br> It contains an inner class HuffmanNode to represent each "node" or character in the tree.
+ *
+ * <p>
+ *     This class contains methods that allow users to compare Huffman trees based on weight,
+ *     and get the array mapping characters to Huffman codes.
+ * </p>
+ *
+ * @author Arshmeet Kaur
+ */
 class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
 
-    HuffmanNode root;
-    String[] encodings;
+    // for easy serialization.
+    private static final long serialVersionUID = 2939177167726658626L;
 
-    /** constructor for a huffman tree with children */
+    HuffmanNode root;
+    private String[] encodings;
+
+    /**
+     * Constructs a huffman tree with two children. Sets left and right child and weight
+     * which is the combined weight of the child trees.
+     * @param h1 left child.
+     * @param h2 right child.
+     */
     public HuffmanTree(HuffmanTree h1, HuffmanTree h2) {
         root = new HuffmanNode();
         root.left = h1.root;
@@ -287,16 +365,22 @@ class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
         root.weight = h1.root.weight + h2.root.weight;
     }
 
-    /** constructor for leaf */
+    /**
+     * Constructs a huffman tree which is a leaf. Sets it weight and the "data", which is
+     * the character that it holds.
+     * @param weight
+     * @param data
+     */
     public HuffmanTree(int weight, char data) {
-        root = new HuffmanNode(weight, data);
+        this.root = new HuffmanNode(weight, data);
     }
 
-    /** should implement compareTo() in reverse order:
-     * Because heap we have created is a max heap.
-     * But we want the minimum frequency at the top so that when we're merging trees, we're picking off the smallest
-     * elements each time.
-     * */
+    /**
+     * compareTo() method is implemented to be in reverse order. In the Huffman Algorithm, we use a MinHeap.
+     * However, here, we have used a max heap, so to easily convert to a min heap, we reverse the comparing order.
+     * @param h the object to be compared.
+     * @return -1 if the current weight is larger, 0 if weight is equal, 1 if current weight is lesser.
+     */
     @Override
     public int compareTo(HuffmanTree h) {
         boolean hDifference = this.root.weight > h.root.weight;
@@ -308,7 +392,11 @@ class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
             return 1;
     }
 
-    /** get the codes */
+    /**
+     * Returns the key of ASCII characters to Huffman encoding string.
+     * @param root is the "root" of the HuffmanNode passed into the HuffmanTree.
+     * @return an array mapping the ASCII character (index of array) to the string of its huffman code.
+     */
     public String[] getCode(HuffmanTree.HuffmanNode root) {
         // if the tree is empty...
         if (root == null)
@@ -321,6 +409,11 @@ class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
         return encoding;
     }
 
+    /**
+     * Helper method of getCode() fills the encoding array passed in.
+     * @param root is the rood of the node
+     * @param encoding is the empty array which maps ASCII character to its huffman code.
+     */
     public static void assignCode(HuffmanTree.HuffmanNode root, String[] encoding) {
         if (root.left != null) {
             // add zeros going leftwards
@@ -337,7 +430,11 @@ class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
         }
     }
 
-    /** Need Inner Class for the HuffmanNode */
+    /**
+     * Need Inner Class for the HuffmanNode class
+     * Each HuffmanNode has a character, it's weight (frequency),
+     * a left and right child, and a string code which represents its Huffman code.
+     * @author Arshmeet Kaur */
     public class HuffmanNode implements Serializable {
         /**
          * data holds the character at each node.
@@ -352,12 +449,12 @@ class HuffmanTree implements Comparable<HuffmanTree>, Serializable {
 
         /** default constructor. */
         public HuffmanNode(){}
+
         /** value constructor gives each node character and weight */
         public HuffmanNode(int weight, char data) {
             this.weight = weight;
             this.data = data;
         }
-
     }
 }
 
@@ -373,7 +470,11 @@ class BitOutputStream extends FileOutputStream implements Serializable {
     }
 
     public void writeInt(int count) throws IOException {
-        super.write(count);
+        // extract each byte of the integer and write one by one
+        super.write((count >> 24) & 0xFF); //shift first byte to lsb
+        super.write((count >> 16) & 0xFF); // shift second byte to lsb
+        super.write((count >> 8) & 0xFF); // shift third byte to lsb
+        super.write(count & 0xFF); // shift fourth byte to lsb
     }
 
     public void writeBits(String bitString) throws IOException {
