@@ -251,84 +251,86 @@ public class CompressFile {
 }
 
 /**
- * @TO_DO: Vincent, add comments.
+ * Generic implementation of a Heap using an array list.
  * @author Vincent Tran
  * @param <E> This will be used for the tree, to create a Heap of type HuffmanTree
  */
 class Heap<E extends Comparable<E>> implements Serializable {
-    private java.util.ArrayList<E> list = new java.util.ArrayList<E>();
+    private java.util.ArrayList<E> heap = new java.util.ArrayList<E>();
 
-    /** Create a default heap */
+    /** default heap constructor */
     public Heap() {
     }
 
-    /** Create a heap from an array of objects */
+    /** create heap from an array of objects */
     public Heap(E[] objects) {
         for (int i = 0; i < objects.length; i++)
             add(objects[i]);
     }
 
-    /** Add a new object into the heap */
-    public void add(E newObject) {
-        list.add(newObject); // Append to the heap
-        int currentIndex = list.size() - 1; // The index of the last node
+    /** add object to heap */
+    public void add(E object) {
+        heap.add(object); // add to the heap
+        int currentIndex = heap.size() - 1; // index of the last node
 
         while (currentIndex > 0) {
             int parentIndex = (currentIndex - 1) / 2;
-            // Swap if the current object is greater than its parent
-            if (list.get(currentIndex).compareTo(
-                    list.get(parentIndex)) > 0) {
-                E temp = list.get(currentIndex);
-                list.set(currentIndex, list.get(parentIndex));
-                list.set(parentIndex, temp);
+            if (heap.get(currentIndex).compareTo(heap.get(parentIndex)) > 0) { // if the current object is greater than its parent
+                // swap objects
+                E temp = heap.get(currentIndex);
+                heap.set(currentIndex, heap.get(parentIndex)); 
+                heap.set(parentIndex, temp);
             }
             else
-                break; // the tree is a heap now
+                break; // tree is a heap
 
             currentIndex = parentIndex;
         }
     }
 
-    /** Remove the root from the heap */
+    /** remove root from the heap and return the removed object */
     public E remove() {
-        if (list.size() == 0) return null;
+        if (heap.size() == 0) 
+            return null; // heap is empty
 
-        E removedObject = list.get(0);
-        list.set(0, list.get(list.size() - 1));
-        list.remove(list.size() - 1);
+        E removedObject = heap.get(0);
+
+        heap.set(0, heap.get(heap.size() - 1));
+        heap.remove(heap.size() - 1);
 
         int currentIndex = 0;
-        while (currentIndex < list.size()) {
+        while (currentIndex < heap.size()) {
             int leftChildIndex = 2 * currentIndex + 1;
             int rightChildIndex = 2 * currentIndex + 2;
 
-            // Find the maximum between two children
-            if (leftChildIndex >= list.size()) break; // The tree is a heap
-            int maxIndex = leftChildIndex;
-            if (rightChildIndex < list.size()) {
-                if (list.get(maxIndex).compareTo(
-                        list.get(rightChildIndex)) < 0) {
-                    maxIndex = rightChildIndex;
+            // find maximum between two children
+            if (leftChildIndex >= heap.size())
+                break; // tree is a heap
+
+            int maxIndex = leftChildIndex; // set max to left child
+            if (rightChildIndex < heap.size()) {
+                if (heap.get(maxIndex).compareTo(heap.get(rightChildIndex)) < 0) { // if left child is less than the right
+                    maxIndex = rightChildIndex; // set max to right child
                 }
             }
 
-            // Swap if the current node is less than the maximum
-            if (list.get(currentIndex).compareTo(list.get(maxIndex)) < 0) {
-                E temp = list.get(maxIndex);
-                list.set(maxIndex, list.get(currentIndex));
-                list.set(currentIndex, temp);
+            if (heap.get(currentIndex).compareTo(heap.get(maxIndex)) < 0) { // if current node is less than the max
+                // swap objects
+                E temp = heap.get(maxIndex);
+                heap.set(maxIndex, heap.get(currentIndex));
+                heap.set(currentIndex, temp);
                 currentIndex = maxIndex;
             }
             else
-                break; // The tree is a heap
+                break; // tree is a heap
         }
 
         return removedObject;
     }
 
-    /** Get the number of nodes in the tree */
+    /** return number of nodes in the tree */
     public int getSize() {
-        return list.size();
+        return heap.size();
     }
 }
 
