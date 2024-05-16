@@ -5,9 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ab6cc8a8-51a2-4e6a-83bb-14af211d15dd" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DecompressFile.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/compscience76.iml" beforeDir="false" afterPath="$PROJECT_DIR$/compscience76.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DecompressFile.java" beforeDir="false" afterPath="$PROJECT_DIR$/compscience76/DecompressFile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Heap.class" beforeDir="false" afterPath="$PROJECT_DIR$/Heap.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/HuffmanTree$HuffmanNode.class" beforeDir="false" afterPath="$PROJECT_DIR$/HuffmanTree$HuffmanNode.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/HuffmanTree.class" beforeDir="false" afterPath="$PROJECT_DIR$/HuffmanTree.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,7 +40,7 @@
     "Application.Unnamed.executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "Merging main",
+    "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "/Users/arshmeetkaur/Java II/CourseNotes/src/compscience76"
   }

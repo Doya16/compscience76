@@ -1,5 +1,6 @@
 package compscience76;
 import java.io.*;
+import compscience76.HuffmanTree;
 
 public class DecompressFile {
     public static void main(String[] args) {
