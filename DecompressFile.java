@@ -11,8 +11,6 @@ public class DecompressFile {
         String compressedFile = args[0];
         String decompressedFile = args[1];
 
-
-
         try (FileInputStream fileIn = new FileInputStream(compressedFile);
              ObjectInputStream ois = new ObjectInputStream(fileIn)) {
 
