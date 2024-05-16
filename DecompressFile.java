@@ -65,55 +65,59 @@ public class DecompressFile {
         return decodedString.toString();
     }
 
-    // Nested private class for bit-level input (Commando's part)
-    private static class BitInputStream implements Closeable {
-        private InputStream in;
-        private int buffer;
-        private int bitsRemaining;
+public class BitInputStream extends FileInputStream {
+    private int currentByte; // the byte we're reading in
+    private int numBits; // the number of bits that have been read in
 
-        public BitInputStream(InputStream in) {
-            this.in = in;
-            buffer = 0;
-            bitsRemaining = 0;
-        }
+    public BitInputStream(File file) throws FileNotFoundException {
+        super(file);
+        currentByte = 0;
+        numBits = 0;
+    }
 
-        public int readBit() throws IOException {
-            if (bitsRemaining == 0) {
-                buffer = in.read();
-                if (buffer == -1) {
-                    throw new EOFException("End of input reached");
-                }
-                bitsRemaining = 8;
-            }
-            int bit = (buffer >> (bitsRemaining - 1)) & 1;
-            bitsRemaining--;
-            return bit;
+    public int readBit() throws IOException {
+        if (numBits == 0) { // no bits have been read yet
+            // read one byte from FileInputStream
+            int newByte = super.read();
+            if (newByte == -1) return -1; // end of file
+            // set the values of the current byte and the number of bits (8 when a byte is read in)
+            currentByte = newByte;
+            numBits = 8;
         }
+        // shifts the digits to the right by numBits-1 so that the bit of interest is the rightmost
+        // & 1 will turn every preceding bit to 0
+        int bit = (currentByte >>> (numBits - 1)) & 1;
+        numBits--;
+        return bit;
+    }
 
-        public int readInt() throws IOException {
-            int result = 0;
-            for (int i = 0; i < 4; i++) {
-                result |= (readByte() << (8 * i));
-            }
-            return result;
+    public String readBits(int quantity) throws IOException {
+        StringBuilder bitString = new StringBuilder();
+        for (int i = 0; i < quantity; i++) {
+            int bit = readBit();
+            if (bit == -1) break; // end of file
+            bitString.append(bit);
         }
+        return bitString.toString();
+    }
 
-        public int readByte() throws IOException {
-            if (bitsRemaining == 0) {
-                buffer = in.read();
-                if (buffer == -1) {
-                    throw new EOFException("End of input reached");
-                }
-                bitsRemaining = 8;
-            }
-            int byteValue = buffer >> (8 - bitsRemaining);
-            bitsRemaining = 0;
-            return byteValue;
+    public int readInt() throws IOException {
+        int intValue = 0;
+        for (int i = 0; i < 4; i++) {
+            int oneByte = super.read();
+            if (oneByte == -1) throw new EOFException("End of input reached");
+            intValue = (intValue << 8) | (oneByte & 0xFF);
         }
+        return intValue;
+    }
 
-        public void close() throws IOException {
-            in.close();
-        }
+    public int readByte() throws IOException {
+        return Integer.parseInt(readBits(8), 2);
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
     }
 }
 
