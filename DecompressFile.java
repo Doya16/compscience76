@@ -64,47 +64,55 @@ public class DecompressFile {
 
         return decodedString.toString();
     }
-}
 
+    // Nested private class for bit-level input (Commando's part)
+    private static class BitInputStream implements Closeable {
+        private InputStream in;
+        private int buffer;
+        private int bitsRemaining;
 
-// Nested private class for bit-level input
-class BitInputStream implements Closeable {
-    private InputStream in;
-    private int currentByte;
-    private int numBitsFilled;
-
-    public BitInputStream(InputStream in) {
-        this.in = in;
-        this.currentByte = 0;
-        this.numBitsFilled = 0;
-    }
-
-    public int readBit() throws IOException {
-        if (numBitsFilled == 0) {
-            currentByte = in.read();
-            if (currentByte == -1) {
-                return -1;  // End of stream
-            }
-            numBitsFilled = 8;
+        public BitInputStream(InputStream in) {
+            this.in = in;
+            buffer = 0;
+            bitsRemaining = 0;
         }
-        numBitsFilled--;
-        return (currentByte >> numBitsFilled) & 1;
-    }
 
-    public int readInt() throws IOException {
-        int result = 0;
-        for (int i = 0; i < 4; i++) {
-            int value = in.read();
-            if (value == -1) {
-                throw new IOException("Unexpected end of stream");
+        public int readBit() throws IOException {
+            if (bitsRemaining == 0) {
+                buffer = in.read();
+                if (buffer == -1) {
+                    throw new EOFException("End of input reached");
+                }
+                bitsRemaining = 8;
             }
-            result |= value << (8 * (3 - i));
+            int bit = (buffer >> (bitsRemaining - 1)) & 1;
+            bitsRemaining--;
+            return bit;
         }
-        return result;
-    }
 
-    @Override
-    public void close() throws IOException {
-        in.close();
+        public int readInt() throws IOException {
+            int result = 0;
+            for (int i = 0; i < 4; i++) {
+                result |= (readByte() << (8 * i));
+            }
+            return result;
+        }
+
+        public int readByte() throws IOException {
+            if (bitsRemaining == 0) {
+                buffer = in.read();
+                if (buffer == -1) {
+                    throw new EOFException("End of input reached");
+                }
+                bitsRemaining = 8;
+            }
+            int byteValue = buffer >> (8 - bitsRemaining);
+            bitsRemaining = 0;
+            return byteValue;
+        }
+
+        public void close() throws IOException {
+            in.close();
+        }
     }
 }
