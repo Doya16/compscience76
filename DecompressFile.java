@@ -1,3 +1,4 @@
+package compscience76;
 import java.io.*;
 
 public class DecompressFile {
@@ -12,13 +13,13 @@ public class DecompressFile {
 
         try (FileInputStream fileIn = new FileInputStream(compressedFile);
              ObjectInputStream ois = new ObjectInputStream(fileIn)) {
-            
+
             // Read Huffman tree
             HuffmanTree hf = (HuffmanTree) ois.readObject();
             System.out.println("Huffman Tree read successfully.");
 
             // Create a new BitInputStream to start reading bit data
-            try (BitInputStream bis = new BitInputStream(fileIn)) {  
+            try (BitInputStream bis = new BitInputStream(fileIn)) {
                 // Read the length of the encoded message
                 int messageLength = bis.readInt();
                 System.out.println("Message length: " + messageLength);
@@ -63,46 +64,47 @@ public class DecompressFile {
 
         return decodedString.toString();
     }
+}
 
-    // Nested private class for bit-level input
-    private static class BitInputStream implements Closeable {
-        private InputStream in;
-        private int currentByte;
-        private int numBitsFilled;
 
-        public BitInputStream(InputStream in) {
-            this.in = in;
-            this.currentByte = 0;
-            this.numBitsFilled = 0;
-        }
+// Nested private class for bit-level input
+class BitInputStream implements Closeable {
+    private InputStream in;
+    private int currentByte;
+    private int numBitsFilled;
 
-        public int readBit() throws IOException {
-            if (numBitsFilled == 0) {
-                currentByte = in.read();
-                if (currentByte == -1) {
-                    return -1;  // End of stream
-                }
-                numBitsFilled = 8;
+    public BitInputStream(InputStream in) {
+        this.in = in;
+        this.currentByte = 0;
+        this.numBitsFilled = 0;
+    }
+
+    public int readBit() throws IOException {
+        if (numBitsFilled == 0) {
+            currentByte = in.read();
+            if (currentByte == -1) {
+                return -1;  // End of stream
             }
-            numBitsFilled--;
-            return (currentByte >> numBitsFilled) & 1;
+            numBitsFilled = 8;
         }
+        numBitsFilled--;
+        return (currentByte >> numBitsFilled) & 1;
+    }
 
-        public int readInt() throws IOException {
-            int result = 0;
-            for (int i = 0; i < 4; i++) {
-                int value = in.read();
-                if (value == -1) {
-                    throw new IOException("Unexpected end of stream");
-                }
-                result |= value << (8 * (3 - i));
+    public int readInt() throws IOException {
+        int result = 0;
+        for (int i = 0; i < 4; i++) {
+            int value = in.read();
+            if (value == -1) {
+                throw new IOException("Unexpected end of stream");
             }
-            return result;
+            result |= value << (8 * (3 - i));
         }
+        return result;
+    }
 
-        @Override
-        public void close() throws IOException {
-            in.close();
-        }
+    @Override
+    public void close() throws IOException {
+        in.close();
     }
 }
