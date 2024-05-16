@@ -10,38 +10,20 @@ public class DecompressFile {
 
         String compressedFile = args[0];
         String decompressedFile = args[1];
-
-
-
-        try (FileInputStream fileIn = new FileInputStream(compressedFile);
-             ObjectInputStream ois = new ObjectInputStream(fileIn)) {
-
-            // Read Huffman tree
-            HuffmanTree hf = (HuffmanTree) ois.readObject();
-            System.out.println("Huffman Tree read successfully.");
-
-            // Create a new BitInputStream to start reading bit data
-            try (BitInputStream bis = new BitInputStream()) {
-                // Read the length of the encoded message
+        
+        File f = new File(decompressedFile); 
+        
+        try(BitInputStream bis = new BitInputStream();
+            ObjectInputStream ois = new ObjectInputStream(bis)) {
+                HuffmanTree hf = (HuffmanTree) ois.readObject();
+                System.out.println("Huffman Tree read successfully.");
+                
                 int messageLength = bis.readInt();
                 System.out.println("Message length: " + messageLength);
-
-                // Read and decode the bit sequence
-                StringBuilder binaryString = new StringBuilder();
-                for (int i = 0; i < messageLength; i++) {
-                    binaryString.append(bis.readBit() == 1 ? "1" : "0");
-                }
-                System.out.println("Encoded message read successfully.");
-
-                // Decode the binary string using the Huffman Tree
-                String decodedString = decodeBinaryString(binaryString.toString(), hf);
-                try (FileOutputStream fos = new FileOutputStream(decompressedFile)) {
-                    fos.write(decodedString.getBytes());
-                }
-                System.out.println("Decoding completed.");
-            }
-
-        } catch (FileNotFoundException e) {
+                
+                String message = bis.readBits(messageLength); 
+                System.out.println(message);
+            } catch (FileNotFoundException e) {
             System.err.println("File not found: " + e.getMessage());
         } catch (IOException e) {
             System.err.println("IO Exception: " + e.getMessage());
@@ -66,14 +48,13 @@ public class DecompressFile {
 
         return decodedString.toString();
     }
-}
 
-class BitInputStream extends FileInputStream {
+    public static class BitInputStream extends FileInputStream {
         private int currentByte; // the byte we're reading in
         private int numBits; // the number of bits that have been read in
 
-        public BitInputStream(File file) throws FileNotFoundException {
-            super(file);
+        public BitInputStream() throws FileNotFoundException {
+            super(new File(""));
             currentByte = 0;
             numBits = 0;
         }
@@ -123,3 +104,4 @@ class BitInputStream extends FileInputStream {
             super.close();
         }
     }
+}
