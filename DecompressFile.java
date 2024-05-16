@@ -18,16 +18,12 @@ public class DecompressFile {
             HuffmanTree hf = (HuffmanTree) ois.readObject();
             System.out.println("Huffman Tree read successfully.");
 
-            // Create a File object from the decompressed file path
-        File decompressedFileObj = new File(decompressedFile);
-
-        try (BitInputStream bis = new BitInputStream(decompressedFileObj)) {
-            int messageLength = bis.readInt();
-            System.out.println("Message length: " + messageLength);
-        } catch (IOException e) {
-            e.printStackTrace();
-        ObjectInputStream ois = new ObjectInputStream(bis);
-        }
+            File file = new File(decompressedFile);
+            BitInputStream bis = new BitInputStream(file);
+            ObjectInputStream ois = new ObjectInputStream(bis);
+            HuffmanTree hf = (HuffmanTree) ois.readObject();
+            int length = bis.readInt(); 
+            String message = bis.readBits(length); 
 
                 // Read and decode the bit sequence
                 StringBuilder binaryString = new StringBuilder();
