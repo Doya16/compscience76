@@ -65,7 +65,53 @@ public class DecompressFile {
     }
 
     // Nested private class for bit-level input (Commando's part)
-    private static class BitInputStream implements {
-    
+       private static class BitInputStream implements Closeable {
+        private InputStream in;
+        private int buffer;
+        private int bitsRemaining;
+
+        public BitInputStream(InputStream in) {
+            this.in = in;
+            buffer = 0;
+            bitsRemaining = 0;
+        }
+
+        public int readBit() throws IOException {
+            if (bitsRemaining == 0) {
+                buffer = in.read();
+                if (buffer == -1) {
+                    throw new EOFException("End of input reached");
+                }
+                bitsRemaining = 8;
+            }
+            int bit = (buffer >> (bitsRemaining - 1)) & 1;
+            bitsRemaining--;
+            return bit;
+        }
+
+        public int readInt() throws IOException {
+            int result = 0;
+            for (int i = 0; i < 4; i++) {
+                result |= (readByte() << (8 * i));
+            }
+            return result;
+        }
+
+        public int readByte() throws IOException {
+            if (bitsRemaining == 0) {
+                buffer = in.read();
+                if (buffer == -1) {
+                    throw new EOFException("End of input reached");
+                }
+                bitsRemaining = 8;
+            }
+            int byteValue = buffer >> (8 - bitsRemaining);
+            bitsRemaining = 0;
+            return byteValue;
+        }
+
+        public void close() throws IOException {
+            in.close();
+        }
     }
 }
