@@ -1,0 +1,62 @@
+Here are some things you should know from Part 1 to do Part 2:
+
+The BitInputStream class:
+- BitInputStream extends FileInputStream (so you can put it in ObjectInputStream and use the methods)
+- you need a readInt() method that calls super.read() (the read method from FileInputStream)
+- you need a readBit() method
+
+Step 1- Read the stuff in.
+you have to use
+BitInputStream bis = new BitInputStream( target_file );
+ObjectInputStream ois = new ObjectInputStream( bis );
+
+Step 2- get the relevant numbers
+In order:
+ois.readObject() => gives you the Huffman Tree
+bis.getChannel().position() => gives you the byte that you're currently at in the file (how many bytes the huffman tree was)
+
+IMPORTANT: The first byte after the Huffman Tree Serialized Object should be read to an int
+=> that int is the number of bits that the encoded message consists of
+int number_of_bits_to_read = bis.readInt() => returns an int that gives you the length of the rest of the message that you have to decode
+REALLY IMPORTANT: DO NOT read all of the bits until the end of the file.
+The last byte is probably padded with a bunch of zeros that don't actually count as part of the encoded message
+
+have a stringbuilder sb
+create a while loop:
+    i = 0
+    while (i < number_of_bits_to_read )
+       sb.append( bis.readBit() );
+    i++
+
+Step 3- Decode it
+write a method or some methods that decode the stringbuilder from Step 2
+
+decoding method:
+you have to use the actual Huffman Tree object for this
+- take the root of the Huffman Tree object in an as an argument
+
+basic algorithm:
+- have a stringbuilder
+
+- traverse through the string character by character
+- set a current character
+
+- for every character:
+
+    if ( root.left != null ) // you havent hit a node yet
+    - if the current character is '0', go root.left
+        - get the next character in the string
+    - if the character is '1', go root.right
+        - get the next character in the string
+    else (root.left == null ) // you hit a node
+    - get the character of that node: root.data
+
+    - if the current character is '0' => go root.left
+    - - if root.left is null, you hit a node => get the character from that node => root.data
+    - - append that character you just got to the stringbuilder at the start
+
+could be helpful:
+there's a getCode() method that is an instance method of every huffman tree
+=> if you call getCode() you'll get the array that maps each index to a "code"
+=> the index number in this array corresponds to the ascii index of a character
+=> so basically every ascii number has it's own code you can use to reconstruct the original string
